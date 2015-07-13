@@ -50,6 +50,23 @@ namespace BitScannerTest
             return r;
         }
 
+        //http://stackoverflow.com/questions/31374628/fast-way-of-finding-most-and-least-significant-bit-set-in-a-64-bit-integer/31377558#31377558
+        public static UInt64 CountLeadingZeros(UInt64 input)
+        {
+            if (input == 0) return 64;
+
+            UInt64 n = 1;
+
+            if ((input >> 32) == 0) { n = n + 32; input = input << 32; }
+            if ((input >> 48) == 0) { n = n + 16; input = input << 16; }
+            if ((input >> 56) == 0) { n = n + 8; input = input << 8; }
+            if ((input >> 60) == 0) { n = n + 4; input = input << 4; }
+            if ((input >> 62) == 0) { n = n + 2; input = input << 2; }
+            n = n - (input >> 63);
+
+            return n;
+        }
+        
         static void Main()
         {
             PrintMagicNumberBits();
@@ -96,9 +113,10 @@ namespace BitScannerTest
             Stopwatch sw1 = new Stopwatch();
             Stopwatch sw2 = new Stopwatch();
             Stopwatch sw3 = new Stopwatch();
-            ulong total = 100000000;
+            Stopwatch sw4 = new Stopwatch();
+            ulong total = 10000000;
             ulong matches = 0;
-            start = start | 0x8000000000000000;
+            //start = start | 0x8000000000000000;
             Console.WriteLine("Starting {0} iterations at random {1}", total, start);
             for (ulong i = start; i < start + total; i++)
             {
@@ -109,9 +127,12 @@ namespace BitScannerTest
                 int r2 = Obvious(i);
                 sw2.Stop();
                 sw3.Start();
-                int r3 = (int)(Math.Log(i,2));
+                int r3 = (int)(Math.Log(i, 2));
                 sw3.Stop();
-                if (r1 == r2 && r2 == r3)
+                sw4.Start();
+                int r4 = 63 - (int)CountLeadingZeros(i);
+                sw4.Stop();
+                if (r1 == r2 && r2 == r3 && r3 == r4)
                 {
                     matches++;
                 }
@@ -119,6 +140,7 @@ namespace BitScannerTest
             Console.WriteLine("DeBruijn time: {0}", sw1.Elapsed);
             Console.WriteLine("Obvious time: {0}", sw2.Elapsed);
             Console.WriteLine("Log2 time: {0}", sw3.Elapsed);
+            Console.WriteLine("SO time: {0}", sw4.Elapsed);
             Console.WriteLine("{0} matches out of {1}", matches, total);
         }
 
